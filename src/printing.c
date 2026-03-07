@@ -91,8 +91,11 @@ void print_short_int(const char *str, int length) {
         printf("hundred");
         if (ones || tens) {
             putspace();
+        } else {
+            return;
         }
     }
+    
     if (tens >= 2) {
         printf(pw_tens[tens]);
         if (ones) {
