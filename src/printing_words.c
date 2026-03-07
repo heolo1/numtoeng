@@ -1,6 +1,6 @@
 #include "printing_words.h"
 
-const char *nw_digits[] = {
+const char *pw_digits[] = {
     "zero",
     "one",
     "two",
@@ -23,7 +23,7 @@ const char *nw_digits[] = {
     "nineteen",
 };
 
-const char *nw_tens[] = {
+const char *pw_tens[] = {
     "zero",
     "ten",
     "twenty",
@@ -36,7 +36,7 @@ const char *nw_tens[] = {
     "ninety",
 };
 
-const char *nw_illions[] = {
+const char *pw_illions[] = {
     "zero",
     "thousand",
     "million",
@@ -60,4 +60,4 @@ const char *nw_illions[] = {
     "novemdecillion", // we use the dictionary word here
 };
 
-const long nw_n_illions = sizeof(nw_illions) / sizeof(nw_illions[0]);
+const long pw_n_illions = sizeof(pw_illions) / sizeof(pw_illions[0]);
