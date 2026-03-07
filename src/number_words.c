@@ -43,6 +43,21 @@ const char *nw_illions[] = {
     "billion",
     "trillion",
     "quadrillion",
+    "quintillion",
+    "sextillion",
+    "septillion",
+    "octillion",
+    "nonillion",
+    "decillion",
+    "undecillion",
+    "duodecillion",
+    "tredecillion",
+    "quattuordecillion",
+    "quindecillion",
+    "sexdecillion", // we use the dictionary word here
+    "septendecillion",
+    "octodecillion",
+    "novemdecillion", // we use the dictionary word here
 };
 
 const long nw_n_illions = sizeof(nw_illions) / sizeof(nw_illions[0]);
