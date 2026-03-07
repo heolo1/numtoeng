@@ -1,5 +1,7 @@
 #include "string_scanning.h"
 
+#include <stdbool.h>
+
 bool ss_empty(const char *str) {
     return str[0] == '\0';
 }
