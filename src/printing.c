@@ -107,13 +107,23 @@ void print_short_int(const char *str, int length) {
     }
 }
 
-void print_plain_int(const char *str, int length) {
-    if (ss_zeroesn(str, length)) {
+void print_int(const char *str, int length) {
+    switch (str[0]) {
+    case '+': case '-':
+        printf(str[0] == '+' ? "positive " : "negative ");
+        str++;
+        length--;
+    }
+
+    int start_zeroes = ss_zero_cntn(str, length);
+
+    if (start_zeroes == length) {
         printf(pw_digits[0]);
         return;
     }
 
-    for (; str[0] == '0'; length--, str++);
+    str += start_zeroes;
+    length -= start_zeroes;
 
     int max_illion = (length - 1) / 3;
 
@@ -123,8 +133,8 @@ void print_plain_int(const char *str, int length) {
     if (beginning_digits) {
         if (!ss_zeroesn(str, beginning_digits)) {
             print_short_int(str, beginning_digits);
-            putspace();
-            if (max_illion) {
+            if (max_illion != 0) {
+                putspace();
                 print_illion(max_illion);
             }
             needs_space = true;
@@ -142,9 +152,9 @@ void print_plain_int(const char *str, int length) {
         }
         
         print_short_int(str + i, 3);
-        putspace();
 
         if (max_illion != 0) {
+            putspace();
             print_illion(max_illion);
         }
 
@@ -152,14 +162,64 @@ void print_plain_int(const char *str, int length) {
     }
 }
 
-void print_signed_int(const char *str, int length) {
-    if (str[0] == '+') {
-        printf("positive ");
-    } else {
-        printf("negative ");
+void print_float(const char *str, int length) {
+    switch (str[0]) {
+    case '+': case '-':
+        printf(str[0] == '+' ? "positive " : "negative ");
+        str++;
+        length--;
     }
 
-    print_plain_int(str + 1, length - 1);
+    int start_numbers = ss_number_cntn(str, length);
+    bool start_is_zero = start_numbers == ss_zero_cntn(str, length);
+
+    if (!start_is_zero) {
+        print_int(str, start_numbers);
+    }
+
+    // we add + 1 to account for the decimal place
+    int dec_pos = start_numbers + 1;
+    str += dec_pos;
+    length -= dec_pos; // [str, str + length) should now be the decimals
+    bool end_is_zero = length == ss_zero_cntn(str, length);
+
+    if (!end_is_zero) {
+        if (!start_is_zero) {
+            printf(" and ");
+        }
+
+        // chop off last few zeroes so it doesnt look goofy
+        // e.g. 0.0010 -> "ten ten thousandths"
+        for (; str[length - 1] == '0'; length--);
+
+        print_int(str, length);
+        putspace();
+
+        // length = 1 -> tenths, length = 2 -> hundredths
+        int non_illion = length % 3; // everything but the illions
+        int illion = length / 3;
+        switch (non_illion) {
+        case 1: case 2: 
+            printf(non_illion == 1 ? pw_tens[1] : "hundred");
+            if (illion) {
+                putchar('-');
+            }
+        }
+
+        if (illion) {
+            print_illion(illion);
+        }
+        
+        printf("th");
+        // plural check, in the case that we just printed one
+        if (!(ss_zeroesn(str, length - 1) && str[length - 1] == '1')) {
+            putchar('s');
+        }
+    }
+
+    if (start_is_zero && end_is_zero) {
+        printf(pw_digits[0]);
+    }
 }
 
 void print_by_kindn(const char *str, int length, ss_num_kind kind) {
@@ -167,11 +227,11 @@ void print_by_kindn(const char *str, int length, ss_num_kind kind) {
         case SS_NUM_INVALID:
             printf("invalid");
             break;
-        case SS_NUM_PLAIN_INTEGER:
-            print_plain_int(str, length);
+        case SS_NUM_INTEGER:
+            print_int(str, length);
             break;
-        case SS_NUM_SIGNED_INTEGER:
-            print_signed_int(str, length);
+        case SS_NUM_FLOAT:
+            print_float(str, length);
             break;
         default:
             printf("unimplemented");
