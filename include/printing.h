@@ -2,6 +2,12 @@
 
 #include "string_scanning.h"
 
+// prints the nth -ion word, corresponding to 10^3n
+// this should theoretically be able to cover all inputs n
+// uses conway-guy system, extended by milli- & -nilli-
+// refer to https://en.wikipedia.org/wiki/Names_of_large_numbers#Extensions_of_the_standard_dictionary_numbers
+void print_illion(int n);
+
 // assumes that 1 <= length <= 3, ss_numbers(str, length), !ss_zeroesn(str, length)
 void print_short_int(const char *str, int length);
 

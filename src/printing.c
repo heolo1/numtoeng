@@ -1,10 +1,82 @@
 #include "printing.h"
 
+#include <limits.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "printing_words.h"
 #include "string_scanning.h"
+
+#define putspace() putchar(' ');
+
+// prints nth illi prefix, 0 <= n < 1000
+static void print_illi_(int n) {
+    if (n < pw_n_illi_small) {
+        printf(pw_illi_small[n]);
+        return;
+    }
+
+    int unit = n % 10;
+    int tens = (n / 10) % 10;
+    int hund = n / 100;
+
+    int right_comb = tens ? pw_illi_tens_comb[tens]
+                          : pw_illi_hundreds_comb[tens];
+
+    printf(pw_illi_unit[unit]);
+    switch (pw_illi_unit_comb[unit] & right_comb) {
+        // can never be more than one at once
+    case PW_ILLI_COMB_S:
+        putchar('s');
+        break;
+    case PW_ILLI_COMB_X:
+        putchar('x');
+        break;
+    case PW_ILLI_COMB_N:
+        putchar('n');
+        break;
+    case PW_ILLI_COMB_M:
+        putchar('m');
+        break;
+    }
+    printf(pw_illi_tens[tens]);
+    if (tens) {
+        if (hund && pw_illi_tens_comb[tens] & PW_ILLI_COMB_A) {
+            putchar('a');
+        } else {
+            putchar('i');
+        }
+    }
+    printf(pw_illi_hundreds[hund]);
+    printf("lli");
+}
+
+void print_illion(int n) {
+    if (n < 2) {
+        switch (n) {
+        case 0:
+            printf("zero");
+            break;
+        case 1:
+            printf("thousand");
+            break;
+        }
+        return;
+    }
+
+    n--; // previously n = 2 -> million, now n = 1 -> milli-
+    // this will be 1000^floor(log base 1000(n))
+    // so n = 5 -> n_size = 1, n = 1000 -> n_size = 1000,
+    /// n = 10'000'000 -> n_size = 1'000'000, etc.
+    int n_size = 1; 
+    for (; INT_MAX / 1000 >= n_size && n / 1000 >= n_size; n_size *= 1000);
+
+    for (; n_size != 0; n %= n_size, n_size /= 1000) {
+        print_illi_(n / n_size);
+    }
+    printf("on");
+}
 
 void print_short_int(const char *str, int length) {
     str += length - 3;
@@ -14,36 +86,33 @@ void print_short_int(const char *str, int length) {
     int hundreds = length >= 3 ? str[0] - '0' : 0;
     
     if (hundreds) {
-        printf(nw_digits[hundreds]);
-        printf(" hundred");
+        printf(pw_digits[hundreds]);
+        putspace();
+        printf("hundred");
         if (ones || tens) {
-            printf(" ");
+            putspace();
         }
     }
     if (tens >= 2) {
-        printf(nw_tens[tens]);
+        printf(pw_tens[tens]);
         if (ones) {
-            printf("-");
-            printf(nw_digits[ones]);
+            putchar('-');
+            printf(pw_digits[ones]);
         }
     } else {
-        printf(nw_digits[tens * 10 + ones]);
+        printf(pw_digits[tens * 10 + ones]);
     }
 }
 
 void print_plain_int(const char *str, int length) {
     if (ss_zeroesn(str, length)) {
-        printf(nw_digits[0]);
+        printf(pw_digits[0]);
         return;
     }
 
     for (; str[0] == '0'; length--, str++);
 
     int max_illion = (length - 1) / 3;
-    if (max_illion >= nw_n_illions) {
-        printf("big num"); // not supported!
-        return;
-    }
 
     // length mod 3 != 0, handle that here
     int beginning_digits = length % 3;
@@ -51,9 +120,9 @@ void print_plain_int(const char *str, int length) {
     if (beginning_digits) {
         if (!ss_zeroesn(str, beginning_digits)) {
             print_short_int(str, beginning_digits);
-            printf(" ");
+            putspace();
             if (max_illion) {
-                printf(nw_illions[max_illion]);
+                print_illion(max_illion);
             }
             needs_space = true;
         }
@@ -66,14 +135,14 @@ void print_plain_int(const char *str, int length) {
         }
 
         if (needs_space) {
-            printf(" ");
+            putspace();
         }
         
         print_short_int(str + i, 3);
-        printf(" ");
+        putspace();
 
         if (max_illion != 0) {
-            printf(nw_illions[max_illion]);
+            print_illion(max_illion);
         }
 
         needs_space = true;
@@ -108,5 +177,10 @@ void print_by_kindn(const char *str, int length, ss_num_kind kind) {
 }
 
 void print_by_kind(const char *str, ss_num_kind kind) {
-    print_by_kindn(str, strlen(str), kind);
+    size_t size = strlen(str);
+    if (size > INT_MAX) {
+        printf("long num");
+    } else {
+        print_by_kindn(str, size, kind);
+    }
 }
