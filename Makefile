@@ -19,7 +19,7 @@ endef
 
 SHELL     := /bin/sh
 CC        := gcc
-CPPFLAGS  := -g -Wall -pedantic -Ofast
+CPPFLAGS  := -Wall -pedantic -Ofast
 CCFLAGS   := $(CPPFLAGS) -std=c17
 PRJ_NAME  := $(notdir $(abspath .))
 
@@ -50,7 +50,7 @@ $(foreach DIR,$(SRC_DIRS),$(eval $(call DIR_RULE,$(BLD_DIR)/$(DIR))))
 $(foreach SRC,$(SRCS),$(eval $(call SRC_RULE,$(SRC),CC)))
 
 $(TARGET): $(patsubst %,$(BLD_DIR)/%.o,$(SRCS)) | $(dir $(TARGET))
-	$(CC) -o $@ $^ $(CCFLAGS) 
+	$(CC) -o $@ $^ $(CCFLAGS)
 
 run: $(TARGET)
 	@ $<
