@@ -1,4 +1,4 @@
-#include "number_words.h"
+#include "printing_words.h"
 
 const char *nw_digits[] = {
     "zero",

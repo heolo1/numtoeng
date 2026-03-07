@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "number_words.h"
+#include "printing_words.h"
 #include "string_scanning.h"
 
 // assumes that 1 <= length <= 3, ss_numbers(str, length), !ss_zeroesn(str, length)
