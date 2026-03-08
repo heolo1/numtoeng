@@ -8,12 +8,12 @@
 #include "printing_words.h"
 #include "string_scanning.h"
 
-#define putspace() putchar(' ');
+#define putspace(f) putc(' ', f);
 
 // prints nth illi prefix, 0 <= n < 1000
-static void print_illi_(int n) {
+static void print_illi_(FILE *f, int n) {
     if (n < pw_n_illi_small) {
-        printf(pw_illi_small[n]);
+        fprintf(f, pw_illi_small[n]);
         return;
     }
 
@@ -24,42 +24,42 @@ static void print_illi_(int n) {
     int right_comb = tens ? pw_illi_tens_comb[tens]
                           : pw_illi_hundreds_comb[tens];
 
-    printf(pw_illi_unit[unit]);
+    fprintf(f, pw_illi_unit[unit]);
     switch (pw_illi_unit_comb[unit] & right_comb) {
         // can never be more than one at once
     case PW_ILLI_COMB_S:
-        putchar('s');
+        putc('s', f);
         break;
     case PW_ILLI_COMB_X:
-        putchar('x');
+        putc('x', f);
         break;
     case PW_ILLI_COMB_N:
-        putchar('n');
+        putc('n', f);
         break;
     case PW_ILLI_COMB_M:
-        putchar('m');
+        putc('m', f);
         break;
     }
-    printf(pw_illi_tens[tens]);
+    fprintf(f, pw_illi_tens[tens]);
     if (tens) {
         if (hund && pw_illi_tens_comb[tens] & PW_ILLI_COMB_A) {
-            putchar('a');
+            putc('a', f);
         } else {
-            putchar('i');
+            putc('i', f);
         }
     }
-    printf(pw_illi_hundreds[hund]);
-    printf("lli");
+    fprintf(f, pw_illi_hundreds[hund]);
+    fprintf(f, "lli");
 }
 
-void print_illion(int n) {
+void print_illion(FILE *f, int n) {
     if (n < 2) {
         switch (n) {
         case 0:
-            printf("zero");
+            fprintf(f, "zero");
             break;
         case 1:
-            printf("thousand");
+            fprintf(f, "thousand");
             break;
         }
         return;
@@ -73,12 +73,12 @@ void print_illion(int n) {
     for (; INT_MAX / 1000 >= n_size && n / 1000 >= n_size; n_size *= 1000);
 
     for (; n_size != 0; n %= n_size, n_size /= 1000) {
-        print_illi_(n / n_size);
+        print_illi_(f, n / n_size);
     }
-    printf("on");
+    fprintf(f, "on");
 }
 
-void print_short_int(const char *str, int length) {
+void print_short_int(FILE *f, const char *str, int length) {
     str += length - 3;
 
     int ones = str[2] - '0';
@@ -86,31 +86,31 @@ void print_short_int(const char *str, int length) {
     int hundreds = length >= 3 ? str[0] - '0' : 0;
     
     if (hundreds) {
-        printf(pw_digits[hundreds]);
-        putspace();
-        printf("hundred");
+        fprintf(f, pw_digits[hundreds]);
+        putspace(f);
+        fprintf(f, "hundred");
         if (ones || tens) {
-            putspace();
+            putspace(f);
         } else {
             return;
         }
     }
     
     if (tens >= 2) {
-        printf(pw_tens[tens]);
+        fprintf(f, pw_tens[tens]);
         if (ones) {
-            putchar('-');
-            printf(pw_digits[ones]);
+            putc('-', f);
+            fprintf(f, pw_digits[ones]);
         }
     } else {
-        printf(pw_digits[tens * 10 + ones]);
+        fprintf(f, pw_digits[tens * 10 + ones]);
     }
 }
 
-void print_int(const char *str, int length) {
+void print_int(FILE *f, const char *str, int length) {
     switch (str[0]) {
     case '+': case '-':
-        printf(str[0] == '+' ? "positive " : "negative ");
+        fprintf(f, str[0] == '+' ? "positive " : "negative ");
         str++;
         length--;
     }
@@ -118,7 +118,7 @@ void print_int(const char *str, int length) {
     int start_zeroes = ss_zero_cntn(str, length);
 
     if (start_zeroes == length) {
-        printf(pw_digits[0]);
+        fprintf(f, pw_digits[0]);
         return;
     }
 
@@ -132,10 +132,10 @@ void print_int(const char *str, int length) {
     bool needs_space = false;
     if (beginning_digits) {
         if (!ss_zeroesn(str, beginning_digits)) {
-            print_short_int(str, beginning_digits);
+            print_short_int(f, str, beginning_digits);
             if (max_illion != 0) {
-                putspace();
-                print_illion(max_illion);
+                putspace(f);
+                print_illion(f, max_illion);
             }
             needs_space = true;
         }
@@ -148,24 +148,24 @@ void print_int(const char *str, int length) {
         }
 
         if (needs_space) {
-            putspace();
+            putspace(f);
         }
         
-        print_short_int(str + i, 3);
+        print_short_int(f, str + i, 3);
 
         if (max_illion != 0) {
-            putspace();
-            print_illion(max_illion);
+            putspace(f);
+            print_illion(f, max_illion);
         }
 
         needs_space = true;
     }
 }
 
-void print_float(const char *str, int length) {
+void print_float(FILE *f, const char *str, int length) {
     switch (str[0]) {
     case '+': case '-':
-        printf(str[0] == '+' ? "positive " : "negative ");
+        fprintf(f, str[0] == '+' ? "positive " : "negative ");
         str++;
         length--;
     }
@@ -174,7 +174,7 @@ void print_float(const char *str, int length) {
     bool start_is_zero = start_numbers == ss_zero_cntn(str, length);
 
     if (!start_is_zero) {
-        print_int(str, start_numbers);
+        print_int(f, str, start_numbers);
     }
 
     // we add + 1 to account for the decimal place
@@ -185,65 +185,78 @@ void print_float(const char *str, int length) {
 
     if (!end_is_zero) {
         if (!start_is_zero) {
-            printf(" and ");
+            fprintf(f, " and ");
         }
 
         // chop off last few zeroes so it doesnt look goofy
         // e.g. 0.0010 -> "ten ten thousandths"
         for (; str[length - 1] == '0'; length--);
 
-        print_int(str, length);
-        putspace();
+        print_int(f, str, length);
+        putspace(f);
 
         // length = 1 -> tenths, length = 2 -> hundredths
         int non_illion = length % 3; // everything but the illions
         int illion = length / 3;
         switch (non_illion) {
         case 1: case 2: 
-            printf(non_illion == 1 ? pw_tens[1] : "hundred");
+            fprintf(f, non_illion == 1 ? pw_tens[1] : "hundred");
             if (illion) {
-                putchar('-');
+                putc('-', f);
             }
         }
 
         if (illion) {
-            print_illion(illion);
+            print_illion(f, illion);
         }
         
-        printf("th");
+        fprintf(f, "th");
         // plural check, in the case that we just printed one
         if (!(ss_zeroesn(str, length - 1) && str[length - 1] == '1')) {
-            putchar('s');
+            putc('s', f);
         }
     }
 
     if (start_is_zero && end_is_zero) {
-        printf(pw_digits[0]);
+        fprintf(f, pw_digits[0]);
     }
 }
 
-void print_by_kindn(const char *str, int length, ss_num_kind kind) {
+FILE *get_desired_f(FILE *f_valid, FILE *f_invalid, ss_num_kind kind) {
+    switch (kind) {
+    case SS_NUM_INTEGER:
+    case SS_NUM_FLOAT:
+        return f_valid;
+    default:
+        return f_invalid;
+    }
+}
+
+FILE *print_by_kindn(FILE *f_valid, FILE *f_invalid, const char *str, size_t length, ss_num_kind kind) {
+    FILE *f = get_desired_f(f_valid, f_invalid, kind);
+    
     switch (kind) {
         case SS_NUM_INVALID:
-            printf("invalid");
+            // length will not be greater than MAX_INT here
+            fprintf(f, "invalid number: '%.*s'", (int)length, str);
             break;
         case SS_NUM_INTEGER:
-            print_int(str, length);
+            print_int(f, str, length);
             break;
         case SS_NUM_FLOAT:
-            print_float(str, length);
+            print_float(f, str, length);
+            break;
+        case SS_NUM_LONG:
+            fprintf(f, "long num");
             break;
         default:
-            printf("unimplemented");
+            fprintf(f, "unimplemented");
             break;
     }
+
+    return f;
 }
 
-void print_by_kind(const char *str, ss_num_kind kind) {
-    size_t size = strlen(str);
-    if (size > INT_MAX) {
-        printf("long num");
-    } else {
-        print_by_kindn(str, size, kind);
-    }
+FILE *print_by_kind(FILE *f_valid, FILE *f_invalid, const char *str, ss_num_kind kind) {
+    return print_by_kindn(f_valid, f_invalid, str, strlen(str), kind);
 }
