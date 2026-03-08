@@ -1,7 +1,10 @@
 #include "string_scanning.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
 
 bool ss_empty(const char *str) {
     return str[0] == '\0';
@@ -69,9 +72,43 @@ static bool ss_is_end_(int ch) {
     return ch == 0 || isspace(ch);
 }
 
+ss_num_kind ss_get_num_kindn(const char *str, size_t length) {
+    if (length == 0) {
+        return SS_NUM_INVALID;
+    }
+    if (length > INT_MAX) {
+        return SS_NUM_LONG;
+    }
+    
+    if (str[0] == '+' || str[0] == '-') {
+        str++;
+        length--;
+    }
+
+    int numbers = ss_number_cntn(str, length);
+
+    if (numbers && numbers == length) {
+        return SS_NUM_INTEGER;
+    }
+
+    if (str[numbers] == '.') {
+        int post_decimal = ss_number_cntn(str + numbers + 1, length - numbers - 1);
+        if ((numbers || post_decimal) &&
+            numbers + post_decimal + 1 == length) {
+            return SS_NUM_FLOAT;
+        }
+    }
+
+    // will add more later
+    return SS_NUM_INVALID;
+}
+
 ss_num_kind ss_get_num_kind(const char *str) {
     if (ss_empty(str)) {
         return SS_NUM_INVALID;
+    }
+    if (strlen(str) > INT_MAX) {
+        return SS_NUM_LONG;
     }
     
     if (str[0] == '+' || str[0] == '-') {

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef enum {
     SS_NUM_INVALID,
+    SS_NUM_LONG, // if the number is longer than INT_MAX characters
 
     SS_NUM_INTEGER, // anything of the form (-|\+)?[0-9]+
     SS_NUM_FLOAT, // anything of the form (-|\+)?([0-9]*\.[0-9]+)|([0-9]+\.[0-9]*)
@@ -35,4 +37,6 @@ bool ss_numbersn(const char *str, int length);
 bool ss_numbers(const char *str);
 
 // returns the type of the number in the string, determining how it will be parsed
+ss_num_kind ss_get_num_kindn(const char *str, size_t length);
+// returns the type of the number in the null-terminated string, determining how it will be parsed
 ss_num_kind ss_get_num_kind(const char *str);
