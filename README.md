@@ -33,5 +33,5 @@ All flags start with `--` to avoid ambiguity. Flags must be passed to the progra
 | ----------------- | ---------------------------------------------------------------------------------- |
 | `--stdin`<br>`--` | Parses input from `stdin`, with numbers assumed to be separated by `\n`, `\r`, or `\0`. The program will ignore empty lines. Silently ignores all arguments provided directly to the command. |
 | `--invalid`<br>`--!` | Prints all messages for invalid numbers (e.g. too long, improper format) to `stderr` instead of `stdout`. |
-| `--labels`<br>`--#` | Labels all output with the index which with they were given, starting with 1. For example, `numtoeng --# 1 2` would output:<br><br><pre><code>1: one<br>2: two</code></pre>Mutally exclusive with `--labels-0`. |
-| `--labels-0`<br>`--#0` | Like `--labels`, but indexing starts from 0 instead of 1. For example, `numtoeng --#0 1 2` would output:<br><br><pre><code>0: one<br>1: two</code></pre>Mutally exclusive with `--labels`. |
+| `--labels`<br>`--#` | Labels all output with the index which with they were given, starting with 1. For example, `numtoeng --# 1 2` would output:<br><br><pre><code>1: one</code><br><code>2: two</code></pre>Mutally exclusive with `--labels-0`. |
+| `--labels-0`<br>`--#0` | Like `--labels`, but indexing starts from 0 instead of 1. For example, `numtoeng --#0 1 2` would output:<br><br><pre><code>0: one</code><br><code>1: two</code></pre>Mutally exclusive with `--labels`. |
