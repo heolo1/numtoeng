@@ -17,3 +17,8 @@ typedef struct program_t {
 } program_t;
 
 void init_default_program(program_t *);
+
+void ff_stdin(program_t *);
+void ff_invalid(program_t *);
+void ff_labels(program_t *);
+void ff_labels_0(program_t *);

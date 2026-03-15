@@ -4,13 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "flags.h"
 #include "printing.h"
 #include "program.h"
-
-bool arg_is_flag(const char *arg) {
-    // safe even for empty strings, since first condition will immediately fail
-    return arg[0] == '-' && arg[1] == '-';
-}
 
 // searches in [str + str_start, str + str_size) for \r, \n, or \0
 // returns str_size if not found
@@ -24,52 +20,25 @@ int find_next_num_break(const char *str, int str_start, int str_size) {
     return i;
 }
 
-int main(int argc, char *argv[]) {
-    char **flagv = argv + 1;
-    int flagc = 0;
-    for (; flagc + 1 < argc && arg_is_flag(flagv[flagc]); flagc++);
+int count_flags(int flagc, char **flagv) {
+    int i;
+    for (i = 0; i < flagc; i++) {
+        if (flagv[i][0] != '-' || flagv[i][1] != '-') {
+            break;
+        }
+    }
+    return i;
+}
 
+int main(int argc, char *argv[]) {
     program_t program;
     init_default_program(&program);
 
-    for (int i = 0; i < flagc; i++) {
-        // i should replace this with something better sooner or later, probably
-        if (strcmp("--", flagv[i]) == 0 ||
-            strcmp("--stdin", flagv[i]) == 0) {
-            if (program.read_stdin) {
-                printf("duplicate flag: %s\n", flagv[i]);
-                return 1;
-            } else {
-                program.read_stdin = true;
-            }
-        } else if (strcmp("--!", flagv[i]) == 0 ||
-                   strcmp("--invalid", flagv[i]) == 0) {
-            if (program.f_invalid != stdout) {
-                printf("duplicate flag: %s\n", flagv[i]);
-                return 1;
-            } else {
-                program.f_invalid = stderr;
-            }
-        } else if (strcmp("--#", flagv[i]) == 0 ||
-                   strcmp("--labels", flagv[i]) == 0) {
-            if (program.label_opt != FV_no_label) {
-                printf("duplicate flag: %s\n", flagv[i]);
-                return 1;
-            } else {
-                program.label_opt = FV_label_1;
-            }
-        } else if (strcmp("--#0", flagv[i]) == 0 ||
-                   strcmp("--labels-0", flagv[i]) == 0) {
-            if (program.label_opt != FV_no_label) {
-                printf("duplicate flag: %s\n", flagv[i]);
-                return 1;
-            } else {
-                program.label_opt = FV_label_0;
-            }
-        } else {
-            printf("unrecognized flag: %s\n", flagv[i]);
-            return 1;
-        }
+    flag_collection_t *flags = make_def_flag_col();
+    int flagc;
+    if (process_flags(argc - 1, argv + 1, &flagc, flags, &program, true)) {
+        free_flag_col(flags);
+        return 1;
     }
 
     int num_idx = program.label_opt == FV_label_1;
@@ -140,7 +109,8 @@ int main(int argc, char *argv[]) {
 
         free(buf);
     } else {
-        char **numv = flagv + flagc;
+        // char **numv = flagv + flagc;
+        char **numv = argv + flagc + 1;
         int numc = argc - flagc - 1;
 
         for (int i = 0; i < numc; i++) {
@@ -153,6 +123,8 @@ int main(int argc, char *argv[]) {
             putc('\n', f_out);
         }
     }
+
+    free_flag_col(flags);
 
     return 0;
 }
