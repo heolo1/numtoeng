@@ -5,21 +5,12 @@
 #include <unistd.h>
 
 #include "printing.h"
+#include "program.h"
 
 bool arg_is_flag(const char *arg) {
     // safe even for empty strings, since first condition will immediately fail
     return arg[0] == '-' && arg[1] == '-';
 }
-
-typedef enum {
-    FLAG_V_no_label,
-    FLAG_V_label_0,
-    FLAG_V_label_1,
-} FLAG_VS_label;
-
-bool FLAG_stdin = false;
-bool FLAG_invalid = false;
-FLAG_VS_label FLAG_label = FLAG_V_no_label;
 
 // searches in [str + str_start, str + str_size) for \r, \n, or \0
 // returns str_size if not found
@@ -38,39 +29,42 @@ int main(int argc, char *argv[]) {
     int flagc = 0;
     for (; flagc + 1 < argc && arg_is_flag(flagv[flagc]); flagc++);
 
+    program_t program;
+    init_default_program(&program);
+
     for (int i = 0; i < flagc; i++) {
         // i should replace this with something better sooner or later, probably
         if (strcmp("--", flagv[i]) == 0 ||
             strcmp("--stdin", flagv[i]) == 0) {
-            if (FLAG_stdin) {
+            if (program.read_stdin) {
                 printf("duplicate flag: %s\n", flagv[i]);
                 return 1;
             } else {
-                FLAG_stdin = true;
+                program.read_stdin = true;
             }
         } else if (strcmp("--!", flagv[i]) == 0 ||
                    strcmp("--invalid", flagv[i]) == 0) {
-            if (FLAG_invalid) {
+            if (program.f_invalid != stdout) {
                 printf("duplicate flag: %s\n", flagv[i]);
                 return 1;
             } else {
-                FLAG_invalid = true;
+                program.f_invalid = stderr;
             }
         } else if (strcmp("--#", flagv[i]) == 0 ||
                    strcmp("--labels", flagv[i]) == 0) {
-            if (FLAG_label != FLAG_V_no_label) {
+            if (program.label_opt != FV_no_label) {
                 printf("duplicate flag: %s\n", flagv[i]);
                 return 1;
             } else {
-                FLAG_label = FLAG_V_label_1;
+                program.label_opt = FV_label_1;
             }
         } else if (strcmp("--#0", flagv[i]) == 0 ||
                    strcmp("--labels-0", flagv[i]) == 0) {
-            if (FLAG_label != FLAG_V_no_label) {
+            if (program.label_opt != FV_no_label) {
                 printf("duplicate flag: %s\n", flagv[i]);
                 return 1;
             } else {
-                FLAG_label = FLAG_V_label_0;
+                program.label_opt = FV_label_0;
             }
         } else {
             printf("unrecognized flag: %s\n", flagv[i]);
@@ -78,12 +72,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    FILE *f_valid = stdout;
-    FILE *f_invalid = FLAG_invalid ? stderr : stdout;
+    int num_idx = program.label_opt == FV_label_1;
 
-    int num_idx = FLAG_label == FLAG_V_label_1;
-
-    if (FLAG_stdin) {
+    if (program.read_stdin) {
         // arbitrary constants
         int read_size = 256;
         int buf_size = read_size * 8;
@@ -107,11 +98,11 @@ int main(int argc, char *argv[]) {
                 if (length) {
                     ss_num_kind num_kind = ss_get_num_kindn(buf + buf_pos,
                         length);
-                    FILE *f_out = get_desired_f(f_valid, f_invalid, num_kind);
-                    if (FLAG_label != FLAG_V_no_label) {
+                    FILE *f_out = get_desired_f(program.f_valid, program.f_invalid, num_kind);
+                    if (program.label_opt != FV_no_label) {
                         fprintf(f_out, "%d: ", num_idx++);
                     }
-                    print_by_kindn(f_valid, f_invalid, buf + buf_pos, length,
+                    print_by_kindn(program.f_valid, program.f_invalid, buf + buf_pos, length,
                         num_kind);
                     putc('\n', f_out);
                 }
@@ -139,11 +130,11 @@ int main(int argc, char *argv[]) {
         // eof reached, check if there are any numbers remaining at the end
         if (buf_pos) {
             ss_num_kind num_kind = ss_get_num_kindn(buf, buf_pos);
-            FILE *f_out = get_desired_f(f_valid, f_invalid, num_kind);
-            if (FLAG_label != FLAG_V_no_label) {
+            FILE *f_out = get_desired_f(program.f_valid, program.f_invalid, num_kind);
+            if (program.label_opt != FV_no_label) {
                 fprintf(f_out, "%d: ", num_idx++);
             }
-            print_by_kindn(f_valid, f_invalid, buf, buf_pos, num_kind);
+            print_by_kindn(program.f_valid, program.f_invalid, buf, buf_pos, num_kind);
             putc('\n', f_out);
         }
 
@@ -154,11 +145,11 @@ int main(int argc, char *argv[]) {
 
         for (int i = 0; i < numc; i++) {
             ss_num_kind num_kind = ss_get_num_kind(numv[i]);
-            FILE *f_out = get_desired_f(f_valid, f_invalid, num_kind);
-            if (FLAG_label != FLAG_V_no_label) {
+            FILE *f_out = get_desired_f(program.f_valid, program.f_invalid, num_kind);
+            if (program.label_opt != FV_no_label) {
                 fprintf(f_out, "%d: ", num_idx++);
             }
-            print_by_kind(f_valid, f_invalid, numv[i], num_kind);
+            print_by_kind(program.f_valid, program.f_invalid, numv[i], num_kind);
             putc('\n', f_out);
         }
     }
