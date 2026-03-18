@@ -1,0 +1,31 @@
+want to implement some sort of generic lang -> lang method
+
+properties?:
+- name
+- base
+
+ex: English:
+- name: en
+- base: 1000
+
+ex: digits:
+- name: num
+- base: 10
+
+we should be able to basically stream numbers to and from something
+
+so, a lang struct should have:
+- formatted -> num for a base
+  - probably needs to return a (positive) number and a (int) base
+  - needs to support parsing "positive" and "negative"
+- some validating function
+- num -> formatted for a base
+- maybe a special case for zeroes?
+
+need to determine a maximum conversion
+- losslessness? lossyness?
+
+also want to give options for a base
+- probably something like --to digit:p.s,e,
+- this will require each lang to contain an options parser
+- how do we store options for a lang?
